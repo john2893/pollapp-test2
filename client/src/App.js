@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import socketIOClient from "socket.io-client";
+
 import Home from "./Components/Home";
 import {Router, Route } from 'react-router';
 import { BrowserRouter, Switch  } from 'react-router-dom'
@@ -23,8 +23,11 @@ class App extends Component {
     this.state = {
         status:'disconnected',
         title:'',
-        member:{}
+        member:{},
+        audience :[],
+        administrator: {}
     }
+    this.emit = this.emit.bind(this);
   }
   // getInitialState(){
   //   return {
@@ -33,12 +36,14 @@ class App extends Component {
 
   //   }
   // }
+  //listen for events
   componentWillMount() {
     this.socket = io('http://127.0.0.1:4001')
     this.socket.on('connect', this.connect);
     this.socket.on('disconnect', this.disconnect)
     this.socket.on('welcome', this.welcome)
     this.socket.on('joined', this.joined)
+    this.socket.on('audience', this.updateAudience);
     // const { endpoint } = this.state;
     // const socket = socketIOClient(endpoint);
     // socket.on('connect', this.connect);
@@ -52,6 +57,10 @@ class App extends Component {
     this.socket.emit(eventName, dataFromClient);
   }
   connect=()=>{
+    var member = (sessionStorage.member) ? JSON.parse(sessionStorage.member): null;
+    if (member){
+      this.emit('join', member) // automatically join user after refresh
+    }
     this.setState({status: 'connected'})
   }
 
@@ -63,7 +72,12 @@ class App extends Component {
   }
 
   joined=(member)=>{
+    sessionStorage.member = JSON.stringify(member)
     this.setState({member:member})
+  }
+
+  updateAudience=(newAudience)=>{
+    this.setState({audience: newAudience});
   }
 
   render() {
